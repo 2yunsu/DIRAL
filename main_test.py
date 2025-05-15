@@ -14,6 +14,7 @@ from utils.misc import calculate_ia_penalty
 import pdb
 import wandb
 from tqdm import tqdm
+import tensorflow as tf
 
 def marl_test(config):
 
@@ -291,8 +292,7 @@ if __name__ == '__main__':
 
     #config = yaml.load(open("configs/test/drqn/5ue_4r_softmax.yaml"))
     experiments = []
-    log = True
-
+    log = False
 
     ##  Test 2 check discount factor impact  ###
     # experiments.append("configs/4ue_3r_toy/test1_reward2.yaml")
@@ -321,12 +321,17 @@ if __name__ == '__main__':
 
     # # =======
     for i in range(len(experiments)):
+        from tensorflow.python.client import device_lib
+        print("-----------------------TensorFlow version------------:", tf.__version__)
+        print("GPU devices:", [x.name for x in device_lib.list_local_devices() if x.device_type == 'GPU'])
+
         # config = yaml.load(open(experiments[i]))
         with open(experiments[i], encoding="utf-8") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         experiment_name = config.setdefault("experiment_name", "")
         realness = config.setdefault("realness", False)
         exp_base = os.path.splitext(os.path.basename(experiments[i]))[0]
+        
         if log:
             wandb.init(project="diral", name="{}".format(exp_base), config=config, reinit=True)  
         
