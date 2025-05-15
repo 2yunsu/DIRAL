@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 import math
-from network import Network
+from envs.network import Network
 
 class TestEnv:
     def __init__(self, **kwargs):
@@ -195,6 +195,12 @@ class TestEnv:
                             rewards = -1
                     else:
                         rewards = -1
+                elif self.reward_design == 6:
+                    # weights = self.network.calculate_reward_weights(transmitters_tti)
+                    rewards = -1*math.exp(float(tot_actions) - 1)
+                elif self.reward_design == 7:
+                    # weights = self.network.calculate_reward_weights(transmitters_tti)
+                    rewards = -1.2**(float(tot_actions) - 1)
                 else:
                     print("Such a reward is not defined!!!")
             #rewards = np.log(R)
@@ -333,7 +339,7 @@ class TestEnv:
             if self.network.is_comm_range(tx_user, other_tx):
                 comm_range_tx.append(other_tx)
 
-        if len(comm_range_tx) == 1:  # If there is no one near to the transmitter
+        if len(comm_range_tx) == 1:  # If there is no one near to the transmitter #####논문 리워드
             reward = 1
         elif len(comm_range_tx) == 2:  # if there are two users then calculate the reward.
             weights = self.network.calculate_reward_weights_design(tx_user, comm_range_tx)
@@ -345,6 +351,41 @@ class TestEnv:
         else:
             # if number of users that collide are more than 2
             reward = -float(len(comm_range_tx))
+
+        return reward
+    
+    def calculate_reward_design_dmu(self, tx_user, transmitters_tti):
+        """
+        This function receives user, pool, and other transmission id to determine the reward of the "user"
+        :param pool: Resource pool
+        :param user: Given user that transmit
+        :param transmitters_tti: Other users
+        :return:
+        """
+        comm_range_tx = []
+        reward = None
+        marginal_rate = 2
+        comm_range_tx.append(tx_user)
+        for other_tx in transmitters_tti:
+            if tx_user == other_tx:
+                continue
+            if self.network.is_comm_range(tx_user, other_tx):
+                comm_range_tx.append(other_tx)
+
+        if len(comm_range_tx) == 1:  # If there is no one near to the transmitter #####논문 리워드
+            reward = 1
+        elif len(comm_range_tx) == 2:  # if there are two users then calculate the reward.
+            weights = self.network.calculate_reward_weights_design(tx_user, comm_range_tx)
+            if weights == 1:
+                reward = 0  # 2 * weights - float(tot_actions)
+            else:
+                # reward = -len(comm_range_tx)
+                reward = -(marginal_rate ** (len(comm_range_tx) - 1))
+            #reward = 2 * weights - float(len(comm_range_tx))
+        else:
+            # if number of users that collide are more than 2
+            # reward = -float(len(comm_range_tx))
+            reward = -(marginal_rate ** (len(comm_range_tx) - 1))
 
         return reward
 
@@ -404,7 +445,7 @@ class TestEnv:
                     else:
                         rewards[tx] = 1  # we can assume that UE has choose the right action,
 
-            # Prepare the observations and rewards of the users.
+            # Prepare the observations and rewards of the users. #디자인된 리워드
             for user in range(self.NUM_USERS):
                 if acts[user][i] == 1:  # If a user transmit at this timestamp.
                     obs[user][i] = 0  # it can not detect any other transmission due to half-duplex feature.

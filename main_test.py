@@ -11,6 +11,10 @@ from collections import defaultdict, deque
 from envs.test_env import TestEnv
 from utils.misc import calculate_ia_penalty
 
+import pdb
+import wandb
+from tqdm import tqdm
+
 def marl_test(config):
 
     experiment_name = config.setdefault("experiment_name", "")
@@ -99,8 +103,7 @@ def marl_test(config):
         for ii in range(pretrain_length*step_size*5):
             action = env.sample()
             if enable_channel:
-                obs, reward = env.my_step_ch(action,
-                                             0)  # obs is a list of tuple with [(ACK,REW) for each user ,(CHANNEL_RESIDUAL_CAPACITY_VECTOR)]
+                obs, reward = env.my_step_ch(action, 0)  # obs is a list of tuple with [(ACK,REW) for each user ,(CHANNEL_RESIDUAL_CAPACITY_VECTOR)]
             else:
                 #obs, reward = env.my_step(
                 #    action, 0)  # obs is a list of tuple with [(ACK,REW) for each user ,(CHANNEL_RESIDUAL_CAPACITY_VECTOR)]
@@ -116,7 +119,7 @@ def marl_test(config):
             ##############################################
         # TODO: now load the positions
         env.load_saved_positions()
-        for time_step in range(time_slots):
+        for time_step in tqdm(range(time_slots)):
             #initializing action vector
             action = np.zeros([num_users], dtype=np.int32)
 
@@ -175,11 +178,14 @@ def marl_test(config):
             cum_r_slots.append(cum_r_slots[-1] + sum_r)
 
             #If NUM_CHANNELS = 2 , total possible reward = 2 , therefore collision = (2 - sum_r) or (NUM_CHANNELS - sum_r)
-            collision = num_channels - sum_r
+            collision_origin = num_channels - sum_r
 
+            channel_counts = np.bincount(action, minlength=num_channels) #yslee
+            collision = np.sum(channel_counts >= 2) #yslee
+            # pdb.set_trace()
             #calculating cumulative collision
             cum_collision.append(cum_collision[-1] + collision)
-            cum_collision_slots.append(cum_collision_slots[-1] + collision)
+            cum_collision_slots.append(cum_collision_slots[-1] + collision_origin)
             #############################
             #  for co-operative policy we will give reward-sum to each user who have contributed
             #  to play co-operatively and rest 0
@@ -224,8 +230,15 @@ def marl_test(config):
                     mainDRQN.train(memory, time_step)
 
             if time_step%(episode_interval) == episode_interval-1:
-                print("Time step " + str(time_step) + " epsilon " + str(mainDRQN.get_eps())
-                      + " cum Collison " + str(cum_collision[episode_interval]) + " sum reward " + str(cum_r[episode_interval]) + " total time " + str(time.time()-start_time) )
+                # print("Time step " + str(time_step) + " epsilon " + str(mainDRQN.get_eps())
+                #       + " cum Collison " + str(cum_collision[episode_interval]) + " sum reward " + str(cum_r[episode_interval]) + " total time " + str(time.time()-start_time) )
+                if log:
+                    wandb.log({
+                        "epsilon": mainDRQN.get_eps(),
+                        "cum_collision": cum_collision[episode_interval],
+                        "sum_reward": cum_r[episode_interval],
+                    }, step=time_step)
+                    # print("total_time: ", time.time() - start_time)
                 cum_r = [0]
                 cum_collision = [0]
                 episode += 1
@@ -265,6 +278,7 @@ def marl_test(config):
 
 
 if __name__ == '__main__':
+    # 나머지 코드
     # NOTE: This part should be commented to be able to debug in Pycharm.
     #if len(sys.argv) < 2:
     #    print("Run: python <script> <config>")
@@ -277,18 +291,57 @@ if __name__ == '__main__':
 
     #config = yaml.load(open("configs/test/drqn/5ue_4r_softmax.yaml"))
     experiments = []
+    log = True
 
 
     ##  Test 2 check discount factor impact  ###
-    experiments.append("configs/4ue_3r_toy/config_toy_4ue_3r_tests_db_r2_b20_mg_o_index_dis_03.yaml")
+    # experiments.append("configs/4ue_3r_toy/test1_reward2.yaml")
+    # experiments.append("configs/4ue_3r_toy/test1_reward3.yaml")
+    # experiments.append("configs/4ue_3r_toy/test1_reward6.yaml")
+    # experiments.append("configs/4ue_3r_toy/test1_reward7.yaml")
+    # experiments.append("configs/4ue_3r_toy/test2_reward2.yaml")
+    # experiments.append("configs/4ue_3r_toy/test2_reward3.yaml")
+    # experiments.append("configs/4ue_3r_toy/test2_reward6.yaml")
+    # experiments.append("configs/4ue_3r_toy/test2_reward7.yaml")
+    # experiments.append("configs/4ue_3r_toy/test3_reward2.yaml")
+    # experiments.append("configs/4ue_3r_toy/test3_reward3.yaml")
+    # experiments.append("configs/4ue_3r_toy/test3_reward6.yaml")
+    # experiments.append("configs/4ue_3r_toy/test3_reward7.yaml")
+    # experiments.append("configs/4ue_3r_toy/test4_reward2.yaml")
+    # experiments.append("configs/4ue_3r_toy/test4_reward3.yaml")
+    # experiments.append("configs/4ue_3r_toy/test4_reward6.yaml")
+    # experiments.append("configs/4ue_3r_toy/test4_reward7.yaml")
+    # experiments.append("configs/4ue_3r_toy/test5_reward2.yaml")
+    # experiments.append("configs/4ue_3r_toy/test5_reward3.yaml")
+    # experiments.append("configs/4ue_3r_toy/test5_reward6.yaml")
+    experiments.append("configs/4ue_3r_toy/test5_reward7.yaml")
+
+
 
 
     # # =======
     for i in range(len(experiments)):
-        config = yaml.load(open(experiments[i]))
-
+        # config = yaml.load(open(experiments[i]))
+        with open(experiments[i], encoding="utf-8") as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
         experiment_name = config.setdefault("experiment_name", "")
         realness = config.setdefault("realness", False)
+        exp_base = os.path.splitext(os.path.basename(experiments[i]))[0]
+        if log:
+            wandb.init(project="diral", name="{}".format(exp_base), config=config, reinit=True)  
+        
+            # === wandb에 yaml 파일 artifact로 저장 ===
+            artifact = wandb.Artifact(f"{exp_base}_config", type="config")
+            # yaml 파일
+            with open(experiments[i], "r", encoding="utf-8") as f:
+                artifact.add_file(experiments[i], name=os.path.basename(experiments[i]))
+            # main_test.py
+            with open("main_test.py", "r", encoding="utf-8") as f:
+                artifact.add_file("main_test.py", name="main_test.py")
+            # envs/test_env.py
+            with open("envs/test_env.py", "r", encoding="utf-8") as f:
+                artifact.add_file("envs/test_env.py", name="test_env.py")
+            wandb.log_artifact(artifact)
         if realness:
             print("This should never happen!!!!")
         else:

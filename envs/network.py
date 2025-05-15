@@ -6,7 +6,7 @@ from numpy import linalg as LA
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-from vehicle import Vehicle
+from envs.vehicle import Vehicle
 
 class Network:
     """

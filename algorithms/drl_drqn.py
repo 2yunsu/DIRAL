@@ -8,7 +8,7 @@ Features:
 import tensorflow as tf
 import sys, os
 import numpy as np
-from policies import BoltzmanPolicy, SoftmaxPolicy, EpsilonGreedy, GreedyPolicy, RandomPolicy
+from algorithms.policies import BoltzmanPolicy, SoftmaxPolicy, EpsilonGreedy, GreedyPolicy, RandomPolicy
 from collections import deque
 #tf.config.optimizer.set_jit(True) # Enable XLA.
 #tf.debugging.set_log_device_placement(True)
@@ -392,10 +392,10 @@ class DRQN:
         :return:
         """
         if not os.path.exists(dir_name):
-            os.mkdir(dir_name)
+            os.makedirs(dir_name)
         dir_name = os.path.join(dir_name, self.name)
         if not os.path.exists(dir_name):
-            os.mkdir(dir_name)
+            os.makedirs(dir_name)
         model_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.name)
         saver = tf.train.Saver(model_vars)
         saver.save(self.sess, os.path.join(dir_name, ("sim_%d_%d") % (simulation, slot)))
