@@ -173,7 +173,7 @@ class TestEnv:
                     rewards = -1*(1 - (R))
                 elif self.reward_design == 2:
                     # only calculate the weight when there are two transmission at the same time.
-                    if tot_actions == 2:
+                    if tot_actions == 2: # m=1
                         weights = self.network.calculate_reward_weights(transmitters_tti)
                         rewards = 2 * weights[0] - float(tot_actions)
                     else:
@@ -200,7 +200,7 @@ class TestEnv:
                     rewards = -1*math.exp(float(tot_actions) - 1)
                 elif self.reward_design == 7:
                     # weights = self.network.calculate_reward_weights(transmitters_tti)
-                    rewards = -1.2**(float(tot_actions) - 1)
+                    rewards = -(1.2**(float(tot_actions) - 1))
                 else:
                     print("Such a reward is not defined!!!")
             #rewards = np.log(R)

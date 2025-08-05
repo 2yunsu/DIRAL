@@ -228,6 +228,7 @@ def marl_test(config):
             #  Start training.
             if not train_after_episode:
                 if time_step < training_stop and training: #and not load_model:
+                    print("Training DRQN time step " + str(time_step))
                     mainDRQN.train(memory, time_step)
 
             if time_step%(episode_interval) == episode_interval-1:
@@ -279,52 +280,27 @@ def marl_test(config):
 
 
 if __name__ == '__main__':
-    # 나머지 코드
-    # NOTE: This part should be commented to be able to debug in Pycharm.
-    #if len(sys.argv) < 2:
-    #    print("Run: python <script> <config>")
-    #sys.exit(1)
-    #script = sys.argv[0]
-    #try:
-    #   config = yaml.load(open(sys.argv[1]))
-    #except:
-    #   config = {}
-
-    #config = yaml.load(open("configs/test/drqn/5ue_4r_softmax.yaml"))
+    import argparse
+    
+    # 명령행 인자 파싱
+    parser = argparse.ArgumentParser(description='Run DIRAL experiments')
+    parser.add_argument('--test', type=int, help='Test number (e.g., 1, 2, 5)')
+    parser.add_argument('--reward', type=int, help='Reward number (e.g., 2, 3, 7)')
+    args = parser.parse_args()
+    
     experiments = []
-    log = False
+    log = True
 
-    ##  Test 2 check discount factor impact  ###
-    # experiments.append("configs/4ue_3r_toy/test1_reward2.yaml")
-    # experiments.append("configs/4ue_3r_toy/test1_reward3.yaml")
-    # experiments.append("configs/4ue_3r_toy/test1_reward6.yaml")
-    # experiments.append("configs/4ue_3r_toy/test1_reward7.yaml")
-    # experiments.append("configs/4ue_3r_toy/test2_reward2.yaml")
-    # experiments.append("configs/4ue_3r_toy/test2_reward3.yaml")
-    # experiments.append("configs/4ue_3r_toy/test2_reward6.yaml")
-    # experiments.append("configs/4ue_3r_toy/test2_reward7.yaml")
-    # experiments.append("configs/4ue_3r_toy/test3_reward2.yaml")
-    # experiments.append("configs/4ue_3r_toy/test3_reward3.yaml")
-    # experiments.append("configs/4ue_3r_toy/test3_reward6.yaml")
-    # experiments.append("configs/4ue_3r_toy/test3_reward7.yaml")
-    # experiments.append("configs/4ue_3r_toy/test4_reward2.yaml")
-    # experiments.append("configs/4ue_3r_toy/test4_reward3.yaml")
-    # experiments.append("configs/4ue_3r_toy/test4_reward6.yaml")
-    # experiments.append("configs/4ue_3r_toy/test4_reward7.yaml")
-    # experiments.append("configs/4ue_3r_toy/test5_reward2.yaml")
-    # experiments.append("configs/4ue_3r_toy/test5_reward3.yaml")
-    # experiments.append("configs/4ue_3r_toy/test5_reward6.yaml")
-    experiments.append("configs/4ue_3r_toy/test5_reward7.yaml")
-
-
-
+    if args.test is not None and args.reward is not None:
+        config_file = f"configs/4ue_3r_toy/test{args.test}_reward{args.reward}.yaml"
+        experiments.append(config_file)
+        print(f"Running experiment: {config_file}")
+    else:
+        print("No arguments provided. Running default experiment: test1_reward2")
+        experiments.append("configs/4ue_3r_toy/test1_reward2.yaml")
 
     # # =======
     for i in range(len(experiments)):
-        from tensorflow.python.client import device_lib
-        print("-----------------------TensorFlow version------------:", tf.__version__)
-        print("GPU devices:", [x.name for x in device_lib.list_local_devices() if x.device_type == 'GPU'])
-
         # config = yaml.load(open(experiments[i]))
         with open(experiments[i], encoding="utf-8") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
@@ -335,9 +311,7 @@ if __name__ == '__main__':
         if log:
             wandb.init(project="diral", name="{}".format(exp_base), config=config, reinit=True)  
         
-            # === wandb에 yaml 파일 artifact로 저장 ===
             artifact = wandb.Artifact(f"{exp_base}_config", type="config")
-            # yaml 파일
             with open(experiments[i], "r", encoding="utf-8") as f:
                 artifact.add_file(experiments[i], name=os.path.basename(experiments[i]))
             # main_test.py

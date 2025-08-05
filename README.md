@@ -10,7 +10,14 @@ This repository is forked from UCMEC. An overview of this study and other baseli
 ```
 bash run.sh
 ```
-* Run the `python main_test.py` command to launch the training.
+You can change the experiments 1(Small Experiment), 2(Medium Experiment), and 5(Large Experiment) by insert a number in `run.sh`.
+And you can change the reward type 2($m=1$), 3($0<m<1$), and 7($m>1$).
+
+```
+TEST_NUM="1" #Small experiment
+REWARD_NUM="2" #m=1
+```
+
 
 ## cite
 * @inproceedings{gundougan2020distributed,

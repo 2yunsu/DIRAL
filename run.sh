@@ -1,15 +1,8 @@
 #!/bin/bash
 
-# main_test.py를 3번 실행하는 스크립트
-# 사용법: ./run_main_test_3times.sh [--test TEST_NUM] [--reward REWARD_NUM]
-# 예시: ./run_main_test_3times.sh --test 1 --reward 2
-# 작성일: 2025-07-31
+TEST_NUM="1"
+REWARD_NUM="2"
 
-# 기본값 설정
-TEST_NUM=""
-REWARD_NUM=""
-
-# 명령행 인자 파싱
 while [[ $# -gt 0 ]]; do
     case $1 in
         --test)
@@ -29,7 +22,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# 실행할 명령어 구성
 if [[ -n "$TEST_NUM" && -n "$REWARD_NUM" ]]; then
     PYTHON_CMD="python main_test.py --test $TEST_NUM --reward $REWARD_NUM"
     echo "Running with arguments: --test $TEST_NUM --reward $REWARD_NUM"
@@ -41,19 +33,15 @@ fi
 echo "Starting main_test.py execution - 3 runs"
 echo "========================================"
 
-# 시작 시간 기록
 start_time=$(date +%s)
 
-# 3번 반복 실행
 for i in {1..3}; do
     echo ""
     echo "Run $i/3 starting at $(date)"
     echo "----------------------------"
     
-    # main_test.py 실행 (구성된 명령어 사용)
     $PYTHON_CMD
     
-    # 실행 상태 확인
     if [ $? -eq 0 ]; then
         echo "Run $i completed successfully at $(date)"
     else
@@ -62,14 +50,12 @@ for i in {1..3}; do
         exit 1
     fi
     
-    # 마지막 실행이 아니면 잠시 대기
     if [ $i -lt 3 ]; then
         echo "Waiting 5 seconds before next run..."
         sleep 5
     fi
 done
 
-# 종료 시간 기록 및 총 소요 시간 계산
 end_time=$(date +%s)
 total_time=$((end_time - start_time))
 
